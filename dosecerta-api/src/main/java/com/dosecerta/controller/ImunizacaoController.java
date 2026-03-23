@@ -1,14 +1,22 @@
 package com.dosecerta.controller;
 
-import com.dosecerta.model.ImunizacaoModel;
-import com.dosecerta.service.ImunizacaoService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.dosecerta.model.ImunizacaoModel;
+import com.dosecerta.service.ImunizacaoService;
 
 // controller rest para imunizações - rotas em /imunizacao
 @RestController
@@ -55,7 +63,7 @@ public class ImunizacaoController {
 
     // get /imunizacao/consultar/paciente/{id}/periodo/{dtIni}/{dtFim} - filtra por
     // período
-    @GetMapping("/consultar/paciente/{id}/periodo/{dtIni}/{dtFim}")
+    @GetMapping("/consultar/paciente/{id}/aplicacao/{dtIni}/{dtFim}")
     public ResponseEntity<List<ImunizacaoModel>> porPeriodo(
             @PathVariable int id,
             @PathVariable String dtIni,
