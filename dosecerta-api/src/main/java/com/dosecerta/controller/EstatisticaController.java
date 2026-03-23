@@ -1,5 +1,9 @@
 package com.dosecerta.controller;
 
+<<<<<<< HEAD
+public class EstatisticaController {
+    
+=======
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,4 +46,5 @@ public class EstatisticaController {
         int total = service.vacinasAcimaDeIdade(meses);
         return ResponseEntity.ok(total); // 200 - retorna contagem
     }
+>>>>>>> develop
 }
