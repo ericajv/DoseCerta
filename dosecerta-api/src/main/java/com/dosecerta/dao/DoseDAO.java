@@ -1,8 +1,17 @@
 package com.dosecerta.dao;
 
-import com.dosecerta.model.DoseModel;
-import org.springframework.jdbc.core.JdbcTemplate;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Repository;
+
+import com.dosecerta.config.DatabaseConnection;
+import com.dosecerta.model.DoseModel;
 
 @Repository
 public class DoseDAO {
@@ -138,4 +147,5 @@ public class DoseDAO {
 
         return lista;
     }
+
 }

@@ -1,9 +1,5 @@
 package com.dosecerta.service;
 
-<<<<<<< HEAD
-public class ImunizacaoService {
-    
-=======
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
@@ -54,5 +50,4 @@ public class ImunizacaoService {
         return dao.deletarPorPaciente(idPaciente);
     }
 
->>>>>>> develop
 }

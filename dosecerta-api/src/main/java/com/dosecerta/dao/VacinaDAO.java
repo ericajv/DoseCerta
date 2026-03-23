@@ -1,175 +1,155 @@
 package com.dosecerta.dao;
 
-import com.dosecerta.model.VacinaModel;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
-
-import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
+import com.dosecerta.config.DatabaseConnection;
+import com.dosecerta.model.VacinaModel;
 
 @Repository
 public class VacinaDAO {
 
-    @Autowired
-    private DataSource dataSource;
+    //CONEXAO AO BANCO
+    private DatabaseConnection db = new DatabaseConnection();
 
-    public void salvar(VacinaModel vacina) {
-        String sql = "INSERT INTO vacina (nome_vacina, descricao_vacina, limite_aplicacao, publico_alvo) VALUES (?, ?, ?, ?)";
+    //---CONTRATOS---
+    //BUSCAR POR ID
+    public VacinaModel buscarPorId(int id) throws SQLException {
 
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sql = "SELECT * FROM vacina WHERE id_vacina = ?";
 
-            stmt.setString(1, vacina.getNomeVacina());
-
-            if (vacina.getDescricaoVacina() != null) {
-                stmt.setString(2, vacina.getDescricaoVacina());
-            } else {
-                stmt.setNull(2, Types.VARCHAR);
-            }
-
-            if (vacina.getLimiteAplicacao() != null) {
-                stmt.setInt(3, vacina.getLimiteAplicacao());
-            } else {
-                stmt.setNull(3, Types.INTEGER);
-            }
-
-            if (vacina.getPublicoAlvo() != null) {
-                stmt.setString(4, vacina.getPublicoAlvo().name());
-            } else {
-                stmt.setNull(4, Types.VARCHAR);
-            }
-
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao salvar vacina", e);
-        }
-    }
-
-    public void atualizar(int id, VacinaModel vacina) {
-        String sql = "UPDATE vacina SET nome_vacina=?, descricao_vacina=?, limite_aplicacao=?, publico_alvo=? WHERE id_vacina=?";
-
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, vacina.getNomeVacina());
-
-            if (vacina.getDescricaoVacina() != null) {
-                stmt.setString(2, vacina.getDescricaoVacina());
-            } else {
-                stmt.setNull(2, Types.VARCHAR);
-            }
-
-            if (vacina.getLimiteAplicacao() != null) {
-                stmt.setInt(3, vacina.getLimiteAplicacao());
-            } else {
-                stmt.setNull(3, Types.INTEGER);
-            }
-
-            if (vacina.getPublicoAlvo() != null) {
-                stmt.setString(4, vacina.getPublicoAlvo().name());
-            } else {
-                stmt.setNull(4, Types.VARCHAR);
-            }
-
-            stmt.setInt(5, id);
-
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao atualizar vacina", e);
-        }
-    }
-
-    public void deletar(int id) {
-        String sql = "DELETE FROM vacina WHERE id_vacina=?";
-
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, id);
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao deletar vacina", e);
-        }
-    }
-
-    public Optional<VacinaModel> buscarPorId(int id) {
-        String sql = "SELECT * FROM vacina WHERE id_vacina=?";
-
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = db.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                return Optional.of(mapearVacina(rs));
-            }
 
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar vacina por ID", e);
+                Integer limite = rs.getObject("limite_aplicacao") != null
+                        ? rs.getInt("limite_aplicacao")
+                        : null;
+
+                return new VacinaModel(
+                        rs.getInt("id_vacina"),
+                        rs.getString("nome_vacina"),
+                        rs.getString("descricao_vacina"),
+                        limite,
+                        VacinaModel.PublicoAlvo.valueOf(rs.getString("publico_alvo"))
+                );
+            }
         }
 
-        return Optional.empty();
+        return null;
     }
 
-    public List<VacinaModel> listarTodos() {
-        String sql = "SELECT * FROM vacina";
-        List<VacinaModel> lista = new ArrayList<>();
+    //LISTAR TODAS
+    public List<VacinaModel> listar() throws SQLException {
 
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                ResultSet rs = stmt.executeQuery()) {
+        List<VacinaModel> lista = new ArrayList<>();
+        String sql = "SELECT * FROM vacina";
+
+        try (Connection conn = db.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                lista.add(mapearVacina(rs));
-            }
 
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao listar vacinas", e);
+                Integer limite = rs.getObject("limite_aplicacao") != null
+                        ? rs.getInt("limite_aplicacao")
+                        : null;
+
+                VacinaModel v = new VacinaModel(
+                        rs.getInt("id_vacina"),
+                        rs.getString("nome_vacina"),
+                        rs.getString("descricao_vacina"),
+                        limite,
+                        VacinaModel.PublicoAlvo.valueOf(rs.getString("publico_alvo"))
+                );
+
+                lista.add(v);
+            }
         }
 
         return lista;
     }
 
-    public boolean existePorId(int id) {
-        String sql = "SELECT 1 FROM vacina WHERE id_vacina=?";
+    //CONSULTAR POR PUBLICO ALVO
+    public List<VacinaModel> buscarPorPublicoAlvo(String publico) throws SQLException {
 
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+        List<VacinaModel> lista = new ArrayList<>();
+        String sql = "SELECT * FROM vacina WHERE publico_alvo = ?";
 
-            stmt.setInt(1, id);
+        try (Connection conn = db.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, publico);
             ResultSet rs = stmt.executeQuery();
 
-            return rs.next();
+            while (rs.next()) {
 
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao verificar existência da vacina", e);
+                Integer limite = rs.getObject("limite_aplicacao") != null
+                        ? rs.getInt("limite_aplicacao")
+                        : null;
+
+                VacinaModel v = new VacinaModel(
+                        rs.getInt("id_vacina"),
+                        rs.getString("nome_vacina"),
+                        rs.getString("descricao_vacina"),
+                        limite,
+                        VacinaModel.PublicoAlvo.valueOf(rs.getString("publico_alvo"))
+                );
+
+                lista.add(v);
+            }
         }
+
+        return lista;
     }
 
-    private VacinaModel mapearVacina(ResultSet rs) throws SQLException {
-        VacinaModel v = new VacinaModel();
+    //CONSULTAR POR IDADE EM MESES
+    public List<VacinaModel> buscarPorIdadeMaiorQue(int meses) throws SQLException {
 
-        v.setIdVacina(rs.getInt("id_vacina"));
-        v.setNomeVacina(rs.getString("nome_vacina"));
-        v.setDescricaoVacina(rs.getString("descricao_vacina"));
+        List<VacinaModel> lista = new ArrayList<>();
 
-        int limite = rs.getInt("limite_aplicacao");
-        if (!rs.wasNull()) {
-            v.setLimiteAplicacao(limite);
+        String sql = """
+            SELECT DISTINCT v.*
+            FROM vacina v
+            JOIN dose d ON v.id_vacina = d.id_vacina
+            WHERE d.idade_recomendada_aplicacao > ?
+        """;
+
+        try (Connection conn = db.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, meses);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+
+                Integer limite = rs.getObject("limite_aplicacao") != null
+                        ? rs.getInt("limite_aplicacao")
+                        : null;
+
+                VacinaModel v = new VacinaModel(
+                        rs.getInt("id_vacina"),
+                        rs.getString("nome_vacina"),
+                        rs.getString("descricao_vacina"),
+                        limite,
+                        VacinaModel.PublicoAlvo.valueOf(rs.getString("publico_alvo"))
+                );
+
+                lista.add(v);
+            }
         }
 
-        String publicoStr = rs.getString("publico_alvo");
-        if (publicoStr != null) {
-            v.setPublicoAlvo(VacinaModel.PublicoAlvo.valueOf(publicoStr));
-        }
-
-        return v;
+        return lista;
     }
+
 }
